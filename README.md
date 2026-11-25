@@ -44,7 +44,7 @@ Traditional precision agriculture systems either rely on static threshold heuris
 
 ```text
 github-repo/
-├── CodeImplementation/
+├── Code Implementation/
 │   └── hydroedge-net-full-comparisons.ipynb   # End-to-end training, baselines, ablation & FAO-56 simulation
 ├── Paper_LaTeX/
 │   ├── main.tex                               # IEEEtran LaTeX manuscript entry point
@@ -162,10 +162,10 @@ Clone the repository, install dependencies, and open the Jupyter notebook:
 git clone https://github.com/geeekyvishal/HydroEdge-Net.git
 cd HydroEdge-Net
 pip install -r requirements.txt
-jupyter notebook CodeImplementation/hydroedge-net-full-comparisons.ipynb
+jupyter notebook "Code Implementation/hydroedge-net-full-comparisons.ipynb"
 ```
 
-> **Note:** The notebook loads `cropdata_updated.csv`. If running from `CodeImplementation/`, ensure the dataset path points to `../dataset/cropdata_updated.csv` (or copy `dataset/cropdata_updated.csv` into your working directory).
+> **Note:** The notebook loads `cropdata_updated.csv`. If running from `Code Implementation/`, ensure the dataset path points to `../dataset/cropdata_updated.csv` (or copy `dataset/cropdata_updated.csv` into your working directory).
 
 ### 3. Compile the LaTeX Research Paper
 All IEEE Transactions LaTeX sources, figures, and bibliography files are in [`Paper_LaTeX/`](Paper_LaTeX/). You can upload the contents of `Paper_LaTeX/` directly to **Overleaf**, or compile locally with `pdflatex` + `bibtex`:
