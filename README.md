@@ -43,7 +43,7 @@ Traditional precision agriculture systems either rely on static threshold heuris
 ## Repository Structure
 
 ```text
-github-repo/
+HydroEdge-Net/
 ├── Code Implementation/
 │   └── hydroedge-net-full-comparisons.ipynb   # End-to-end training, baselines, ablation & FAO-56 simulation
 ├── Paper_LaTeX/
@@ -60,7 +60,7 @@ github-repo/
 │   └── edge_model.rs                          # Memory-safe #![no_std] Rust module for embedded MCUs
 ├── results/
 │   ├── Master_Results_Tables.md               # Consolidated Markdown benchmark & ablation tables
-│   └── figures/                               # High-resolution result plots (Figures 0–4)
+│   └── figures/                               # High-resolution result plots (pipeline, confusion matrix, Tiny-XAI, FAO-56)
 ├── requirements.txt                           # Python dependencies for the notebook
 ├── .gitignore                                 # Git ignore rules for Python, Jupyter, and LaTeX builds
 └── README.md                                  # Project documentation
