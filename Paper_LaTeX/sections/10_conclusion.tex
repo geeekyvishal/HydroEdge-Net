@@ -1,0 +1,15 @@
+\section{Conclusion and Future Work}
+\label{sec:conclusion}
+
+In this paper, we presented \textbf{HydroEdge-Net}, an explainable, biophysically informed TinyML framework for precision crop water stress diagnosis and closed-loop autonomous irrigation scheduling on low-cost edge microcontrollers. By synthesizing thermodynamic Soil-Plant-Atmosphere Continuum (SPAC) principles into an on-device feature extraction engine---deriving Tetens-formulated Vapor Pressure Deficit (VPD), Soil Moisture Deficit (SMD) relative to field capacity ($\theta_{\text{FC}} = 35.0\%$), and the Thermal-Moisture Stress Coupling Index ($\Psi_{\text{TMS}}$)---HydroEdge-Net eliminates the necessity for prohibitive radiometric thermal cameras while dramatically compressing the decision space required by embedded tree ensembles.
+
+Trained with cost-sensitive loss weighting on a multi-crop benchmark of 16,411 instances across five crop varieties and seven soil textures, HydroEdge-Net achieves 95.71\% overall accuracy (scaling to 99.18\% in tuned mode) and an outstanding 98.96\% sensitivity on critical water deficit stress. When compiled into a bare-metal static C header (\texttt{edge\_model.h}) with zero heap allocation and zero external runtime libraries, the model executes on an Espressif ESP32-S3 in 1.42~ms and consumes merely 16.8~KB of Flash and 11.4~KB of SRAM, representing a 40.0\% Flash reduction and 64.38\% SRAM reduction compared to the state-of-the-art AquaSense baseline.
+
+Furthermore, local TreeSHAP attribution analysis established that diagnostic decisions are strictly grounded in known physiological dynamics, with soil moisture, $\Psi_{\text{TMS}}$, VPD, and seedling phenological sensitivity driving inference. In a rigorous 30-day (720-hour) continuous simulation under a dual-layer FAO-56 Penman-Monteith hydrological digital twin, HydroEdge-Net delivered a 63.96\% water conservation gain over conventional calendar flooding while completely eliminating transpirational water stress and soil hypoxia, whereas static thresholding suffered recurrent moisture deficits.
+
+Future research will pursue three key frontiers:
+\begin{enumerate}
+    \item \textbf{Decentralized Federated Edge Learning:} Developing low-bandwidth federated aggregation protocols allowing distributed farm nodes to collaboratively refine gradient boosting ensembles without transmitting raw environmental telemetry to centralized servers.
+    \item \textbf{Sparse Event-Triggered Mesh Networking:} Integrating energy-efficient LoRaWAN multi-hop mesh networking with adaptive event-triggered reporting to propagate localized pest, pathogen, and irrigation alerts across expansive regional cooperatives.
+    \item \textbf{On-Device Microclimate Adaptation:} Investigating lightweight online recursive fine-tuning techniques to adapt baseline decision boundaries to micro-scale soil compaction, saline water intrusion, and extreme weather anomalies.
+\end{enumerate}

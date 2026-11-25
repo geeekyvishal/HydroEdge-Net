@@ -1,0 +1,70 @@
+\section{Experimental Setup}
+\label{sec:experimental_setup}
+
+To rigorously evaluate HydroEdge-Net, we established a comprehensive experimental benchmarking methodology encompassing benchmark agricultural datasets, physical microcontroller hardware testbeds, and standardized baseline architectures.
+
+\subsection{Benchmark Datasets and Data Partitioning}
+
+The empirical evaluation of HydroEdge-Net is conducted on the multi-crop phenological dataset (\texttt{cropdata\_updated.csv}), corresponding to the public Smart Agriculture Dataset~\cite{gopidesi2024smartagri} (Reference~[36], analyzed as Dataset~2 in the base paper by Jeaunita \textit{et~al.}~\cite{jeaunita2025multitask}). This dataset provides rich multi-environment operational records for precision farming:
+\begin{itemize}
+    \item \textbf{Scale and Diversity:} The dataset comprises 16,411 complete multi-sensor observations collected across diverse agro-climatic conditions.
+    \item \textbf{Crop Diversity:} Encompasses five major commercial crop varieties: Wheat (\textit{Triticum aestivum}), Tomato (\textit{Solanum lycopersicum}), Chilli (\textit{Capsicum annuum}), Potato (\textit{Solanum tuberosum}), and Carrot (\textit{Daucus carota}).
+    \item \textbf{Soil Diversity:} Encompasses seven distinct agricultural soil types: Black soil, Alluvial soil, Sandy soil, Red soil, Clay soil, Loam soil, and Chalky soil, each characterized by distinct water-retention curves and wilting thresholds.
+    \item \textbf{Phenological Stages:} Spans eight distinct developmental stages: Germination, Seedling, Vegetative, Flowering, Pollination, Fruit Formation, Maturation, and Harvest.
+    \item \textbf{Target Classes:} Ground-truth physiological water status is categorized into three agronomic states: Class 0 (Optimal / Adequate Moisture), Class 1 (Water Deficit Stress), and Class 2 (Saturated / Excess Water).
+\end{itemize}
+
+To ensure sound statistical validation, the dataset of 16,411 instances is partitioned using a stratified 80/20 train/test split:
+\begin{itemize}
+    \item \textbf{Training Partition:} 13,128 samples (80.0\%) used for feature normalization, cost-sensitive weight calculation, and gradient boosting optimization.
+    \item \textbf{Held-Out Testing Partition:} 3,283 samples (20.0\%) strictly isolated during training and hyperparameter selection, reserved exclusively for benchmark verification. The test set distribution comprises 1,813 Class 0 samples, 1,246 Class 1 samples, and 224 Class 2 samples.
+\end{itemize}
+
+Table~\ref{tab:dataset_characteristics} details the comprehensive physical specifications, sensor units, dynamic ranges, and statistical distributions of all continuous input features and categorical factors in the benchmark dataset ($N = 16,411$). As demonstrated, ambient temperature spans from $13.0^{\circ}\text{C}$ to $46.0^{\circ}\text{C}$ with a mean of $28.83 \pm 9.70^{\circ}\text{C}$, while relative humidity spans $15.0\%$ to $91.0\%$, encapsulating extreme diurnal arid and monsoon conditions. The engineered Vapor Pressure Deficit ($\text{VPD}$) ranges up to $8.65\ \text{kPa}$ with a mean of $1.76 \pm 1.48\ \text{kPa}$, and the Soil Moisture Deficit ($\text{SMD}$) spans up to $34.0\%$. These statistical boundaries establish that the engineered biophysical features capture severe physiological drought boundaries without artificial clipping or data leakage.
+
+\begin{table*}[!t]
+\caption{Comprehensive Statistical Distribution and Physical Specification of Experimental Dataset ($N = 16,411$)}
+\label{tab:dataset_characteristics}
+\centering
+\renewcommand{\arraystretch}{1.2}
+\resizebox{0.95\textwidth}{!}{
+\begin{tabular}{llccccc p{5.5cm}}
+\toprule
+\textbf{Feature Symbol} & \textbf{Physical Variable Description} & \textbf{Transduction Unit} & \textbf{Min} & \textbf{Max} & \textbf{Mean $\pm$ Std} & \textbf{Agronomic / Biophysical Significance} \\
+\midrule
+$T$ & Ambient Air Temperature & $^{\circ}\text{C}$ & 13.0 & 46.0 & $28.83 \pm 9.70$ & Drives kinetic energy for water vaporization and transpirational flux. \\
+$\text{RH}$ & Atmospheric Relative Humidity & $\%$ & 15.0 & 91.0 & $63.49 \pm 22.63$ & Governs boundary-layer water vapor saturation pressure deficit. \\
+$\theta$ (MOI) & Volumetric Soil Moisture Content & $\%$ & 1.0 & 98.0 & $27.64 \pm 10.73$ & Primary edaphic water reservoir available in the crop root zone. \\
+$\text{VPD}$ & Vapor Pressure Deficit (Tetens Eq.) & $\text{kPa}$ & 0.14 & 8.65 & $1.76 \pm 1.48$ & True atmospheric evaporative suction exerted on leaf stomata. \\
+$\text{SMD}$ & Soil Moisture Deficit ($\theta_{\text{FC}} - \theta$) & $\%$ & 0.0 & 34.0 & $7.36 \pm 10.73$ & Net root-zone depletion relative to field capacity ($\theta_{\text{FC}} = 35\%$). \\
+$\Psi_{\text{TMS}}$ & Thermal-Moisture Stress Coupling Index & Dimensionless & 0.0 & 7.89 & $0.38 \pm 0.97$ & Non-linear coupling of evaporative pull and soil depletion. \\
+\midrule
+\multicolumn{7}{l}{\textbf{Categorical Factor Distributions ($N = 16,411$ observations):}} \\
+\multicolumn{7}{l}{\textit{Crops (5 classes):} Wheat (3,283), Tomato (3,282), Chilli (3,282), Potato (3,282), Carrot (3,282).} \\
+\multicolumn{7}{l}{\textit{Soils (7 classes):} Black (2,345), Alluvial (2,345), Sandy (2,344), Red (2,344), Clay (2,344), Loam (2,345), Chalky (2,344).} \\
+\multicolumn{7}{l}{\textit{Target Physiological Status:} Class 0 Optimal (9,065; 55.2\%), Class 1 Deficit (6,230; 38.0\%), Class 2 Saturated (1,116; 6.8\%).} \\
+\bottomrule
+\end{tabular}
+}
+\end{table*}
+
+\subsection{Edge Microcontroller Target and Embedded Profile}
+
+To evaluate embedded deployment viability, HydroEdge-Net is profiled for execution on resource-constrained agricultural IoT microcontrollers:
+\begin{itemize}
+    \item \textbf{Target Microcontroller Platform:} Espressif ESP32-S3-WROOM-1, featuring a 32-bit Xtensa dual-core LX7 processor clocked at 240~MHz, with 512~KB of internal SRAM, 384~KB of ROM, and 8~MB of external SPI Flash memory.
+    \item \textbf{Bare-Metal Static C Generation:} The trained LightGBM decision trees are transpiled directly into an ANSI C header file (\texttt{edge\_model.h}) consisting of static nested conditional branching functions without external runtime libraries or dynamic heap allocation (\texttt{malloc}-free).
+    \item \textbf{Operational Power Modeling:} Power consumption and battery lifetime are modeled based on manufacturer electrical operating specifications ($68\text{ mA}$ active current at 240~MHz, $15\ \mu\text{A}$ deep-sleep current) evaluated under a standard 15-minute agricultural periodic sampling schedule ($99.98\%$ sleep duty cycle).
+\end{itemize}
+
+\subsection{Comparative Baseline Architectures}
+
+To establish a comprehensive performance benchmark, HydroEdge-Net is evaluated against four standard and state-of-the-art baselines:
+\begin{enumerate}
+    \item \textbf{Threshold Rule Heuristic:} A conventional rule-based heuristic commonly found in entry-level commercial controllers, triggering irrigation when volumetric moisture content $\theta < 20\%$, and flagging excess water when $\theta > 40\%$.
+    \item \textbf{Support Vector Machine (SVM-RBF):} A non-linear support vector classifier utilizing a Radial Basis Function (RBF) kernel with regularized cost parameter $C = 1.0$ and auto-scaled gamma, deployed with float32 support vectors.
+    \item \textbf{Random Forest (RF-100):} An ensemble of 100 unconstrained decision trees with maximum depth $d = 10$, representing standard cloud-side ensemble baselines.
+    \item \textbf{AquaSense Replicated Baseline (2026):} Direct replication of the edge GBDT model introduced by Zaman \textit{et~al.}~\cite{zaman2026aquasense}, utilizing LightGBM with rolling statistics and deployed via the Treelite C runtime library on the ESP32-S3.
+    \item \textbf{HydroEdge-Net (Proposed TinyML):} The proposed constrained model with leaf-wise growth, $d \le 5$, $N_{\text{leaves}} \le 31$, $N_{\text{trees}} = 45$, cost-sensitive loss weighting ($\omega_k$), and compiled into a bare-metal static C header (`edge\_model.h`).
+    \item \textbf{HydroEdge-Net (Tuned Configuration):} An expanded configuration with $d \le 6$ and $N_{\text{trees}} = 65$, demonstrating performance scalability when slightly larger Flash allocation ($<20$~KB) is permissible.
+\end{enumerate}

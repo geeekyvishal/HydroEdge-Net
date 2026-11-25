@@ -1,0 +1,63 @@
+\section{Related Work and Critical Gap Analysis}
+\label{sec:related_work}
+
+The intersection of artificial intelligence, the Internet of Things (IoT), and agricultural hydrology has inspired numerous paradigms for crop monitoring. This section reviews relevant literature across deep learning architectures, microcontroller-based edge computing, and multimodal phenological sensing, highlighting the critical research gaps addressed by HydroEdge-Net.
+
+\subsection{Deep Learning in Agriculture and Institutional Base Paper}
+
+Recent literature has increasingly leveraged deep convolutional and recurrent architectures to diagnose plant disease, monitor crop vigor, and detect anomalies~\cite{hughes2015open, sankararao2022pearlmillet, ahmad2024ai}. The primary institutional foundation for this study is the landmark investigation by Jeaunita \textit{et~al.}~\cite{jeaunita2025multitask}, published in the \textit{IEEE Transactions on Sustainable Computing} (2025). 
+
+Jeaunita \textit{et~al.}~\cite{jeaunita2025multitask} proposed a comprehensive multi-task deep learning framework targeting anomaly detection and carbon emission forecasting in precision agriculture. Their architecture integrates four primary subsystems: (i) field telemetry aggregation backed by the decentralized InterPlanetary File System (IPFS) to guarantee data immutability; (ii) a CoStat-Principal Component Analysis (CoStat-PCA) dimensionality reduction module for in-situ agricultural telemetry; (iii) a 138-million-parameter deep convolutional neural network based on the VGG-16 backbone to extract spatial and texture representations from unmanned aerial vehicle (UAV) imagery; and (iv) a multi-task learning core comprising a deep autoencoder for environmental anomaly detection (achieving 99.73\% accuracy) coupled with a feedforward neural network for carbon emission prediction (achieving 99.20\% accuracy), integrated into a blockchain-based smart contract alerting mechanism. Crucially, in Section~IV-C and Table~V of their paper, Jeaunita \textit{et~al.} evaluated model generalization on the publicly available Smart Agriculture Dataset~\cite{gopidesi2024smartagri} (denoted as Dataset~2, encompassing 16,411 multi-crop observations across five crops and seven soil types, \texttt{cropdata\_updated.csv}), reporting 99.12\% accuracy and 99.10\% recall.
+
+While Jeaunita \textit{et~al.}~\cite{jeaunita2025multitask} demonstrated remarkable predictive accuracy, their system exhibits critical architectural gaps when viewed from the perspective of autonomous on-farm execution:
+\begin{enumerate}
+    \item \textbf{Computational Asymmetry and Server Dependency:} The 138-million-parameter VGG-16 feature extractor requires several gigabytes of GPU memory and floating-point acceleration. Consequently, the pipeline is confined to centralized cloud or edge-server infrastructure, rendering it incapable of running on autonomous field sensor nodes powered by energy-harvesting microcontrollers.
+    \item \textbf{Bandwidth and Network Vulnerability:} Telemetry and high-resolution aerial imagery must be continually streamed to IPFS clusters and cloud instances. In realistic rural agricultural deployments, where cellular coverage is intermittent or non-existent, communication dropouts halt inference, disrupting operational continuity~\cite{olatinwo2025review}.
+    \item \textbf{Retrospective Anomaly Detection vs. Closed-Loop Actuation:} Jeaunita \textit{et~al.} formulate their objective around supervisory anomaly flagging and carbon accounting rather than sub-second, closed-loop soil moisture regulation and irrigation valve control. Agricultural water management requires active, prescriptive decision-making rather than passive post-hoc auditing.
+\end{enumerate}
+
+\subsection{Microcontroller Edge Baselines and AquaSense}
+
+To decouple agricultural intelligence from high-latency cloud backends, the TinyML paradigm has emerged as a pathway to run inference directly on ultra-low-power microcontrollers (e.g., ARM Cortex-M or Espressif ESP32 families)~\cite{banbury2021benchmarking, lin2020mcunet}. In this context, the primary experimental baseline for our work is \textbf{AquaSense}, developed by Zaman \textit{et~al.}~\cite{zaman2026aquasense}.
+
+AquaSense implements an on-device crop stress classification and adaptive scheduling pipeline on an Espressif ESP32-S3 microcontroller coupled with LoRaWAN wireless telemetry. The system gathers multi-depth capacitive soil moisture readings alongside canopy temperature data acquired via a long-wave infrared (LWIR) radiometric thermal imager (FLIR Lepton 3.5). The classification engine relies on a LightGBM gradient boosted decision tree compiled via the Treelite model deployment framework~\cite{cho2018treelite, ke2017lightgbm}. In experimental trials, AquaSense reported 95.86\% classification accuracy, 1.70~ms execution latency, a 28.0~KB Flash memory footprint, a 32.0~KB SRAM overhead, and 37\% field water conservation.
+
+Despite its advancements over cloud-centric paradigms, an in-depth technical analysis reveals several substantial vulnerabilities in AquaSense and related edge frameworks:
+\begin{enumerate}
+    \item \textbf{Prohibitive Sensor Bill-of-Materials:} The reliance on radiometric thermal cameras (such as the FLIR Lepton 3.5) introduces a severe cost barrier. A single FLIR core costs upwards of \$200 to \$260, driving the overall node BOM beyond commercial viability for small- and medium-scale growers~\cite{nugroho2025lowcost, yang2026watermelon}.
+    \item \textbf{Unengineered Empirical Rolling Statistics:} AquaSense feeds raw sliding-window statistical aggregates (mean, variance, min, max) directly into decision trees without incorporating the underlying thermodynamic physics of the Soil-Plant-Atmosphere Continuum (SPAC). As a result, the trees must expend excessive branching depth to capture complex non-linear interactions, inflating the compiled code footprint (28.0~KB Flash) and dynamic memory footprint (32.0~KB SRAM).
+    \item \textbf{Class Collapse on Critical Deficit Stress:} In standard operational datasets, periods of optimal soil moisture heavily outnumber instances of acute water stress. Without explicit cost-sensitive reweighting, unweighted gradient boosting exhibits severe sensitivity loss on minority water deficit samples, misclassifying acute drought stress as optimal moisture until visual wilting occurs.
+    \item \textbf{Runtime Library Overhead:} By utilizing intermediate model compilers such as Treelite or TensorFlow Lite for Microcontrollers (TFLite-Micro), edge nodes incur significant runtime library bloat and memory buffer overheads, restricting multi-task firmware flexibility on memory-constrained MCUs.
+\end{enumerate}
+
+\subsection{Multimodal and Phenological Sensing Paradigms}
+
+Parallel investigations have examined multimodal fusion and phenological awareness for irrigation scheduling. Guo \textit{et~al.}~\cite{guo2025mffusionnet} developed MF-FusionNet, a lightweight multimodal network combining remote sensing spectral indices and meteorological telemetry to monitor drought stress in winter wheat. While successful in satellite/drone contexts, MF-FusionNet relies on convolutional operations that exceed micro-watt MCU budgets. 
+
+Wu~\cite{wu2026agpstc} proposed the AG-PSTC algorithm for precision irrigation in smart tea gardens, demonstrating that crop water requirements vary drastically across phenological development stages (e.g., sprouting vs. mature harvesting). Choi \textit{et~al.}~\cite{choi2025sweetpotato} explored multimodal data fusion combined with explainable AI (SHAP) for water stress classification in sweet potatoes, validating that integrating environmental indices improves diagnostic fidelity. Furthermore, recent work by Nugroho \textit{et~al.}~\cite{nugroho2025lowcost} and Yang \textit{et~al.}~\cite{yang2026watermelon} demonstrated that while canopy thermal infrared imaging provides an early indicator of water stress via Crop Water Stress Index (CWSI) formulations~\cite{jackson1981canopy, idso1981normalizing}, its operational utility in low-cost open-field systems is frequently impaired by dust contamination, wind turbulence, and direct sunlight artifacts. In greenhouse drip-irrigated crops, Xu \textit{et~al.}~\cite{xu2026turgor} revealed that leaf turgor dynamics correlate strongly with both soil moisture and ambient vapor pressure deficit. Similarly, Korostenskyi and Olenych~\cite{korostenskyi2025smart} demonstrated that predictive TinyML control reduces plant watering volumes, though their approach was limited to homogeneous indoor container plants without soil or phenological diversity.
+
+\subsection{Summary of Identified Gaps and Proposed Positioning}
+
+A systematic comparison of representative prior frameworks against HydroEdge-Net is summarized in Table~\ref{tab:lit_comparison}, while a direct empirical benchmark evaluated on the identical Dataset~2 in-situ agricultural corpus (\texttt{cropdata\_updated.csv}) is presented in Section~\ref{sec:results} (Table~\ref{tab:identical_dataset_benchmark}). Existing solutions force an unfavorable compromise: either adopting high-capacity cloud deep learning frameworks with severe connectivity vulnerabilities~\cite{jeaunita2025multitask}, or adopting edge microcontrollers burdened by exorbitant thermal sensor costs, unengineered feature representations, memory bloat, and black-box opacity~\cite{zaman2026aquasense}. 
+
+HydroEdge-Net resolves these discrepancies by combining biophysically grounded feature formulations (VPD, SMD, $\Psi_{\text{TMS}}$), categorical soil and phenological awareness, cost-sensitive class balancing, bare-metal C compilation, and Tiny-XAI explainability on low-cost edge microcontrollers.
+
+\begin{table*}[!t]
+\caption{Comprehensive Comparison of Agricultural Intelligence and Irrigation Scheduling Architectures}
+\label{tab:lit_comparison}
+\centering
+\renewcommand{\arraystretch}{1.25}
+\resizebox{0.95\textwidth}{!}{
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Framework / Feature} & \textbf{Deployment Target} & \textbf{Primary Sensor Modality} & \textbf{Model Backbone} & \textbf{Flash / SRAM} & \textbf{Explainability} & \textbf{Deficit Sensitivity} \\
+\midrule
+Jeaunita \textit{et~al.} (2025)~\cite{jeaunita2025multitask} & Cloud / IPFS Server & Drone RGB + In-situ Telemetry & VGG-16 + Autoencoder & $>500$~MB & Partial (PCA) & High ($>99\%$) \\
+MF-FusionNet (2025)~\cite{guo2025mffusionnet} & Edge Server / Jetson & Multispectral + Weather & Lightweight CNN-Transformer & $>45$~MB & None (Black-box) & High ($96.4\%$) \\
+AG-PSTC (2026)~\cite{wu2026agpstc} & Industrial Gateway & Multi-depth Soil + Weather & Rule + Phenology Lookup & N/A & Heuristic & N/R \\
+AquaSense (2026)~\cite{zaman2026aquasense} & Microcontroller (ESP32-S3) & Thermal Radiometric + Soil Moisture & LightGBM (Treelite) & 28.0~KB / 32.0~KB & None (Black-box) & Moderate ($90.2\%$) \\
+\textbf{HydroEdge-Net (Proposed)} & \textbf{Microcontroller (ESP32-S3)} & \textbf{Ambient ($T, \text{RH}$) + Edaphic ($\theta$)} & \textbf{Constrained C-GBDT} & \textbf{16.8~KB / 11.4~KB} & \textbf{Tiny-XAI (TreeSHAP)} & \textbf{Exceptional (98.96\%)} \\
+\bottomrule
+\end{tabular}
+}
+\end{table*}

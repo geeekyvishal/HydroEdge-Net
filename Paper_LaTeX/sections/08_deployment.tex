@@ -1,0 +1,59 @@
+\section{On-Device TinyML Deployment and Firmware Compilation}
+\label{sec:deployment}
+
+Deploying machine learning models onto embedded microcontrollers requires meeting rigorous silicon boundaries. Most conventional embedded ML frameworks (e.g., TensorFlow Lite for Microcontrollers, Treelite, CMSIS-NN) introduce considerable runtime library bloat, dynamic memory buffers, and interpreter overhead. In this section, we present the bare-metal C compilation strategy of HydroEdge-Net and evaluate its silicon performance across multiple microcontroller architectures.
+
+\subsection{Bare-Metal Static C Transpilation Architecture}
+
+To achieve zero-overhead execution, we developed a specialized transpilation engine that translates trained LightGBM ensembles directly into ANSI C header files (\texttt{edge\_model.h}). The firmware implementation exhibits three foundational architectural properties:
+\begin{enumerate}
+    \item \textbf{Inline Branch Evaluation:} Each of the 45 decision trees is compiled into an inline C function (\texttt{tree\_0} through \texttt{tree\_44}) composed of nested conditional \texttt{if-else} branching constructs. Rather than traversing pointer-based node graphs stored in dynamic memory, branch comparisons are evaluated directly by the hardware ALU:
+\begin{quote}
+\small\ttfamily
+static inline float tree\_0(const float *x) \{\\
+\mbox{}\quad if (x[2] <= 24.50f) \{\\
+\mbox{}\quad\quad if (x[5] <= 1.85f) return 0.4128f;\\
+\mbox{}\quad\quad else return 1.8924f;\\
+\mbox{}\quad \} else \{ ... \}\\
+\}
+\end{quote}
+    \item \textbf{Zero Heap Allocation (\texttt{malloc}-Free):} The compiled model requires zero dynamic memory allocation. All internal variables, input feature arrays, and intermediate accumulators reside strictly on the execution stack. This completely eliminates the threat of heap fragmentation, memory leaks, or allocation panics during years of continuous unattended field operation.
+    \item \textbf{Deterministic Bounded Latency:} Because tree depth is strictly clipped to $d \le 5$, the execution path of each tree requires at most 5 floating-point comparisons and a single accumulator addition. For an ensemble of 45 trees, inference is strictly upper-bounded to at most 225 scalar operations, guaranteeing hard real-time deterministic execution.
+\end{enumerate}
+
+\subsection{Embedded Microcontroller Silicon Profiling and Benchmarks}
+
+To quantify embedded feasibility, we profiled the compiled HydroEdge-Net static C firmware on the primary target platform (Espressif ESP32-S3 @ 240~MHz) against the replicated state-of-the-art AquaSense baseline. The empirical silicon measurements are cataloged in Table~\ref{tab:silicon_benchmarks}.
+
+\begin{table*}[!t]
+\caption{Silicon Resource Footprint and Microcontroller Profiling on Espressif ESP32-S3 (240~MHz)}
+\label{tab:silicon_benchmarks}
+\centering
+\renewcommand{\arraystretch}{1.25}
+\resizebox{0.95\textwidth}{!}{
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Firmware / Configuration} & \textbf{Deployment Runtime} & \textbf{Tree Architecture} & \textbf{Inference Latency} & \textbf{Flash Footprint} & \textbf{SRAM Footprint} & \textbf{Battery Autonomy} \\
+\midrule
+AquaSense Replicated (2026)~\cite{zaman2026aquasense} & Treelite C Runtime & 60 Trees (LightGBM) & 1.70~ms & 28.0~KB & 32.0~KB & $>$2.1 Years (2500~mAh) \\
+\textbf{HydroEdge-Net (Proposed TinyML, $d=5$)} & \textbf{Bare-Metal Static C} & \textbf{45 Trees ($d \le 5$)} & \textbf{1.42~ms} & \textbf{16.8~KB} & \textbf{11.4~KB} & \textbf{$>$2.5 Years (2500~mAh)} \\
+\textbf{HydroEdge-Net (Tuned Config, $d=6$)} & \textbf{Bare-Metal Static C} & \textbf{65 Trees ($d \le 6$)} & \textbf{1.56~ms} & \textbf{19.4~KB} & \textbf{11.8~KB} & \textbf{$>$2.5 Years (2500~mAh)} \\
+\bottomrule
+\end{tabular}
+}
+\end{table*}
+
+\subsection{Comparative Efficiency Analysis}
+
+The hardware metrics in Table~\ref{tab:silicon_benchmarks} confirm remarkable efficiency:
+\begin{itemize}
+    \item \textbf{Execution Latency:} On the ESP32-S3 (240~MHz), active inference executes in just \textbf{1.42~ms}. This represents a \textbf{16.47\% speedup} over the AquaSense baseline (1.70~ms), well within hard real-time requirements for closed-loop agricultural valve control.
+    \item \textbf{Silicon Memory Footprint:} HydroEdge-Net occupies merely \textbf{16.8~KB of Flash} and \textbf{11.4~KB of SRAM}. In contrast, the replicated AquaSense model consumes 28.0~KB Flash and 32.0~KB SRAM. HydroEdge-Net delivers a \textbf{40.0\% reduction in Flash memory} and a \textbf{64.38\% reduction in SRAM consumption}. This reduction allows low-power edge nodes to operate with zero heap fragmentation risk.
+    \item \textbf{Multi-Year Battery Autonomy:} Operating under a standard 15-minute sampling interval ($T_{\text{sample}} = 900$~s), the microcontroller spends 1.42~ms in active inference mode ($I_{\text{active}} \approx 68$~mA) and 899.998~s in deep sleep mode ($I_{\text{sleep}} \le 15\ \mu\text{A}$), achieving a \textbf{99.98\% sleep duty cycle}. The average continuous current draw is calculated as:
+\begin{align}
+I_{\text{avg}} &= \frac{(1.42 \times 10^{-3} \times 68) + (899.998 \times 0.015)}{900} \nonumber \\
+&\approx 15.11\ \mu\text{A}
+\label{eq:avg_current}
+\end{align}
+Powered by a single 3.2V 2500~mAh LiFePO4 battery cell, the node achieves an estimated operational autonomy exceeding \textbf{2.5 years} of maintenance-free operation in open agricultural environments (accounting for self-discharge derating).
+\end{itemize}
